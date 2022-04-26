@@ -8,12 +8,17 @@ from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-
+from googleapiclient.http import MediaFileUpload
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
-def createFile():
+def createFile(fileContent):
+
+    with open('content.txt', 'w') as f:
+        f.write(fileContent)
+    f.close
+
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -47,9 +52,13 @@ def createFile():
         folder_id = parent_id
 
         file_metadata = {
+            'name': 'Secrets',
             'parents': [folder_id]}
 
-        file = service.files().create(body=file_metadata, fields='id').execute() #create a file in the test folder
+        media = MediaFileUpload('content.txt', mimetype='text/plain') 
+        file = service.files().create(body=file_metadata, media_body=media, fields='id').execute() #create a file in the test folder
+        #file = service.files().create(body=file_metadata, fields='id').execute() #create a file in the test folder
+        print ('File ID: ' + file.get('id'))
 
     except HttpError as error:
         # TODO(developer) - Handle errors from drive API.

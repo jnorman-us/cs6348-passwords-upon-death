@@ -19,6 +19,7 @@ while True:
     if event in ('Submit'):
         print('You entered in the fileContent:')
         print(values['fileContent'])
-        quickstart.createFile() 
+
+        quickstart.createFile(values['fileContent']) #create file in drive
 
 window.close()
