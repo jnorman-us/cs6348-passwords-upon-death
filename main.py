@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+import quickstart
 
 sg.theme('Black')
 layout = [  [sg.Text('File authentication')],
@@ -18,5 +19,7 @@ while True:
     if event in ('Submit'):
         print('You entered in the fileContent:')
         print(values['fileContent'])
+
+        quickstart.createFile(values['fileContent']) #create file in drive
 
 window.close()
