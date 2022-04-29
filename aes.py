@@ -149,7 +149,7 @@ def decryptFile(encfilename):
 
 def main():
     key, salt = keyGen()
-    tempf = "localcopy.txt"
+    tempf = "localcopy.json"
     f = open(tempf, "w")
     k = 3
     n = 5
