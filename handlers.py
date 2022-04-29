@@ -49,7 +49,7 @@ class PasswordsFormHandlers:
 				'password': values[('password', i)],
 			})
 
-		with open(file_name, 'r+') as file:
+		with open(file_name, 'w+') as file:
 			file.seek(0)
 			json.dump(passwords, file)
 			file.truncate()

@@ -1,3 +1,4 @@
+import os
 import json
 import quickstart
 
@@ -29,8 +30,9 @@ print(key)
 print(salt)
 
 passwords = []
-with open('localcopy.json', 'r+') as file:
-    passwords = json.load(file)
+if os.path.exists('localcopy.json'):
+    with open('localcopy.json', 'r+') as file:
+        passwords = json.load(file)
 
 # SECOND FORM
 # Allow the user to edit the passwords
