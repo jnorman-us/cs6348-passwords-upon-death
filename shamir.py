@@ -35,7 +35,6 @@ def testCreateShares():
 	print('The key is', hexlify(key))
 
 	shares = deconstruct(key, t, n)
-	print(shares)
 	printShares(shares)
 
 	shares_subset = random.sample(shares, t)
@@ -53,7 +52,6 @@ def testUseShares():
 			break
 		idx, share = re.split(r'\s*\,\s*', line)
 		shares.append((int(idx), unhexlify(share)))
-	print(shares)
 	printShares(shares)
 	key = construct(shares)
 	print('Here\'s the key! %s' % hexlify(key))
