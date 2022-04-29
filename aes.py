@@ -37,13 +37,13 @@ def hmacVerify(filename, hmac):
     except ValueError:
         return 0
 
-def keyGenWithSalt(salt):
-    password = PASSW.encode()
+def keyGenWithSalt(passw, salt):
+    password = passw.encode()
     key = scrypt(password, salt, 32, N=2 ** 20, r=8, p=1)
     return key
 
-def keyGen():
-    password = PASSW.encode()
+def keyGen(passw):
+    password = passw.encode()
     salt = get_random_bytes(32)
     key = scrypt(password, salt, 32, N=2**20, r=8, p=1)
     return key, salt
@@ -146,10 +146,10 @@ def decryptFile(encfilename):
     return decfilename
 
 
-
+'''
 def main():
-    key, salt = keyGen()
-    tempf = "localcopy.txt"
+    key, salt = keyGen(PASSW)
+    tempf = "localcopy.json"
     f = open(tempf, "w")
     k = 3
     n = 5
@@ -178,7 +178,7 @@ def main():
 
     shamirKey = shamirCombine(newshares)
     sharefile = decryptWithShamir(shamirKey, encfile)
-
+'''
 
 
 if __name__ == '__main__':

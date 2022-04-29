@@ -1,25 +1,57 @@
-import PySimpleGUI as sg
+import json
 import quickstart
 
-sg.theme('Black')
-layout = [  [sg.Text('File authentication')],
-            [sg.Text('Enter password: '), sg.InputText(key='pwd'), sg.Button('Enter')],
-            [sg.Multiline(size=(30, 5), key='fileContent')],
-            [sg.Button('Submit'), sg.Button('Close')]]
+from forms import passwordsForm, loginForm
+from handlers import PasswordsFormHandlers, LoginFormHandlers
 
-window = sg.Window('Passwords upon death', layout, finalize=True)
 
+password = None
+salt = None
+key = None
+
+# FIRST FORM
+# Get the user to login!
+
+window = loginForm()
 while True:
     event, values = window.read()
-    if event in (None, 'Close'):
+    if type(event) is tuple:
+        command = event[0]
+        if command == 'login':
+            password, key, salt = LoginFormHandlers.login(event, values)
+            window.close()
+            break
+    elif event in (None, 'Close'):
         break
-    if event in ('Enter'):
-        print('Entered password:')
-        print(values['pwd'])
-    if event in ('Submit'):
-        print('You entered in the fileContent:')
-        print(values['fileContent'])
 
-        quickstart.createFile(values['fileContent']) #create file in drive
+print(password)
+print(key)
+print(salt)
+
+passwords = []
+with open('localcopy.json', 'r+') as file:
+    passwords = json.load(file)
+
+# SECOND FORM
+# Allow the user to edit the passwords
+window = passwordsForm(passwords)
+while True:
+    event, values = window.read()
+    if type(event) is tuple:
+        command = event[0]
+        if command == 'add':
+            passwords = PasswordsFormHandlers.add(event, values)
+            window.close()
+            window = passwordsForm(passwords)
+        if command == 'delete':
+            passwords = PasswordsFormHandlers.delete(event, values)
+            window.close()
+            window = passwordsForm(passwords)
+        if command == 'save':
+            passwords = PasswordsFormHandlers.save(event, values)
+            window.close()
+            window = passwordsForm(passwords)
+    elif event in (None, 'Close'):
+        break
 
 window.close()
