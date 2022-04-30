@@ -62,3 +62,25 @@ class LoginFormHandlers:
 		password = values['password']
 		key, salt = keyGen(password)
 		return password, key, salt
+
+class ShamirPageHandlers:
+	@staticmethod
+	def generate(event, values):
+		try:
+			t = int(values['t'])
+			n = int(values['n'])
+		except:
+			return (0, 0, [])
+
+		print('GENERATING %d SHARES, %d to reconstruct' % (n, t))
+
+		return (t, n, [
+			'share 1',
+			'share 2',
+			'share 3',
+		])
+
+	@staticmethod
+	def email(event, values, shares):
+		print('Emailing...')
+		print(shares)
