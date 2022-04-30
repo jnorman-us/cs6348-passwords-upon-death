@@ -35,6 +35,7 @@ while True:
                 password, key, salt = LoginFormHandlers.login(event, values)
                 window.close()
                 window = passwordsForm(passwords)
+        # PASSWORD FORM ACTIONS
         elif window.Title == PASSWORD_FORM_TITLE():
             if command == 'add':
                 passwords = PasswordsFormHandlers.add(event, values)
@@ -51,6 +52,7 @@ while True:
             elif command == 'shamir':
                 window.close()
                 window = shamirPage(shamir_t, shamir_n, shares)
+        # SHAMIR FORM ACTIONS
         elif window.Title == SHAMIR_PAGE_TITLE():
             if command == 'passwords':
                 window.close()
@@ -61,5 +63,6 @@ while True:
                 window = shamirPage(shamir_t, shamir_n, shares)
             elif command == 'email':
                 ShamirPageHandlers.email(event, values, shares)
+        # CHANGE PASSWORD ACTIONS
 
 window.close()
