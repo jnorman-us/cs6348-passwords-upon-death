@@ -38,6 +38,9 @@ def test():
     #encrypt the file locally
     encryptFile()
 
+    #generate local hmac
+    hmacGen()
+
     # for user's first time create folder
     # folder id in .env
     create_folder()
@@ -52,7 +55,8 @@ def test():
     # download file
     download_file()
 
-
+    #verify local hmac
+    hmacVerify()
     # decrypt file with user password
     # would normally get from gui
     decryptFile()
@@ -91,7 +95,7 @@ def test():
     # remove non-persistent info from .env
     unset_key("persist.env", "SALT")
     unset_key("persist.env", "PWD")
-    unset_key("persist.env", "DECF")
+    #unset_key("persist.env", "DECF")
     #unset_key("persist.env", "ENCF")
 
     return

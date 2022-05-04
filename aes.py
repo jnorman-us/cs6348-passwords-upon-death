@@ -53,7 +53,7 @@ def hmacVerify():
     msg = f.read()
     secret = get_key("persist.env", "SECRET")
     hmac = get_key("persist.env", "HMAC")
-    h = HMAC.new(bytes(secret), digestmod=SHA256)
+    h = HMAC.new(bytes.fromhex(secret), digestmod=SHA256)
     h.update(msg)
     try:
         h.hexverify(hmac)
