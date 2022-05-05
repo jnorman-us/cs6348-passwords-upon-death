@@ -1,7 +1,12 @@
-# This is a sample Python script.
+'''
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+Module for AES, Shamir, and HMAC methods
+Key generation, regeneration, file encryption
+and decryption.
+
+Individual methods outlined below.
+
+'''
 
 
 from Crypto.Cipher import AES
@@ -12,50 +17,111 @@ import json
 from base64 import b64encode
 from base64 import b64decode
 from Crypto.Hash import HMAC, SHA256
+from dotenv import dotenv_values, set_key, unset_key, get_key
+import os
 
 
-PASSW = "PaSsWoRd"
-SECRET = b'Swordfish'
+''' hmacGen creates an HMAC digest from the local encrypted
+    file before storing to google drive.  The digest is
+    stored in the local .env for verification. The HMAC
+    function requires a "secret" which is a randomly generated
+    byte-string each time we generate a new digest
+'''
 
 
-def hmacGen(filename):
-    f = open(filename, 'rb')
+def hmacGen():
+    encf = get_key("persist.env", "ENCF")
+    f = open(encf, 'rb')
     msg = f.read()
-    h = HMAC.new(SECRET, digestmod=SHA256)
+    secret = get_random_bytes(16)
+    set_key("persist.env", "SECRET", secret.hex())
+    h = HMAC.new(secret, digestmod=SHA256)
     h.update(msg)
     f.close()
-    return h.hexdigest()
+    set_key("persist.env", "HMAC", h.hexdigest())
+    return
 
-def hmacVerify(filename, hmac):
-    f = open(filename, 'rb')
+
+''' hmacVerify loads a stored secret and hmac digest
+    from the local .env file and verifies if a downloaded
+    encrypted file is unmodified since last local use
+'''
+
+def hmacVerify():
+    encf = get_key("persist.env", "ENCF")
+    f = open(encf, 'rb')
     msg = f.read()
-    h = HMAC.new(SECRET, digestmod=SHA256)
+    secret = get_key("persist.env", "SECRET")
+    hmac = get_key("persist.env", "HMAC")
+    h = HMAC.new(bytes.fromhex(secret), digestmod=SHA256)
     h.update(msg)
     try:
         h.hexverify(hmac)
+        unset_key("persist.env", "SECRET")
+        unset_key("persist.env", "HMAC")
         return 1
     except ValueError:
+        '''TODO - allow user to delete file on drive? and re-upload'''
         return 0
 
-def keyGenWithSalt(passw, salt):
+
+''' reGenKey(salt) takes the salt from the
+    stored encrypted file and regenerates the
+    AES key using the user provided file password
+'''
+
+def reGenKey(salt):
+    passw = get_key("persist.env", "PWD")
     password = passw.encode()
     key = scrypt(password, salt, 32, N=2 ** 20, r=8, p=1)
     return key
 
-def keyGen(passw):
-    password = passw.encode()
-    salt = get_random_bytes(32)
-    key = scrypt(password, salt, 32, N=2**20, r=8, p=1)
-    return key, salt
 
-def shamirCreate(salt, k, n):
-    password = PASSW
-    key = scrypt(password, salt, 32, N=2**20, r=8, p=1)
+''' keyGenWithSalt generates an 256-bit key
+    from the user provided file password upon
+    login, and the current session saved salt
+    For use in current session only
+'''
+
+
+def keyGenWithSalt():
+    passw = get_key("persist.env", "PWD")
+    salt = get_key("persist.env", "SALT")
+    password = passw.encode()
+    key = scrypt(password, salt, 32, N=2 ** 20, r=8, p=1)
+    return key
+
+
+''' keyGen() generates a 256-bit key
+    from the user provided file password
+    and a randomly generated 32-byte salt
+'''
+
+
+def keyGen():
+    password = bytes.fromhex(get_key("persist.env", "PWD"))
+    salt = get_random_bytes(32).hex()
+    set_key("persist.env", "SALT", salt)
+    key = scrypt(password, salt, 32, N=2 ** 20, r=8, p=1)
+    return
+
+
+''' shamirCreate() generates N keys where
+    K keys are necessary to fetch the AES key
+    K, N from .env; shares saved in list in .env 
+'''
+
+
+def shamirCreate():
+    k = int(get_key("persist.env", "K"))
+    n = int(get_key("persist.env", "N"))
+
+    # get key from password and salt
+    key = keyGenWithSalt()
     key1 = key[:16]
     key2 = key[16:]
-    print(key1.hex())
-    print(key2.hex())
 
+    # create n shamir keys, where k is needed to unlock
     shares1 = Shamir.split(k, n, key1)
     shares2 = Shamir.split(k, n, key2)
     shares = []
@@ -66,10 +132,22 @@ def shamirCreate(salt, k, n):
         bytestring += sh2[0:16]
         shares.append(bytestring.hex())
 
-    return shares
+    shares_string = ''
+    for x in range(len(shares)):
+        shares_string += shares[x]
+        shares_string += " "
+    set_key("persist.env", "SHARES", shares_string)
+    return
+
+
+''' shamirCombine(kshares) takes a list of shamir keys
+    and regenerates the AES key.  The shared shamir keys
+    contain a single hex string comprise of index1, share1, index2, 
+    share2 for a mapping to the original AES key. 
+'''
+
 
 def shamirCombine(kshares):
-
     sh1 = []
     sh2 = []
     for y in range(len(kshares)):
@@ -80,38 +158,52 @@ def shamirCombine(kshares):
         ksh2 = x[20:36]
         sh1.append((int.from_bytes(idx1, 'big'), ksh1))
         sh2.append((int.from_bytes(idx2, 'big'), ksh2))
-
-    print(sh1)
-    print(sh2)
     key1 = Shamir.combine(sh1)
     key2 = Shamir.combine(sh2)
     key = key1 + key2
-    print(key1.hex())
-    print(key2.hex())
     return key
 
-def encryptFile(key, salt, infilename):
 
-    outfilename = infilename + ".encrypted"
+''' encryptFile() takes the plaintext filename from .env
+    and encrypts it using AES-GCM with tags.  output file is 
+    formatted in json. DECF (decrypted file) is removed from .env
+    when done, and plaintext file is deleted from system.
+'''
+
+
+def encryptFile():
+    infilename = str(get_key("persist.env", "DECF"))
+    key = keyGenWithSalt()
+    outfilename = infilename.split(".")[0] + ".enc"
     infile = open(infilename, 'rb')
     outfile = open(outfilename, 'w')
     cipher = AES.new(key, AES.MODE_GCM)
     data = infile.read()
+    salt = bytes.fromhex(get_key("persist.env", "SALT"))
     cipher.update(salt)
     ciphertext, tag = cipher.encrypt_and_digest(data)
-
     json_k = ['nonce', 'header', 'ciphertext', 'tag']
     json_v = [b64encode(x).decode('utf-8') for x in (cipher.nonce, salt, ciphertext, tag)]
     result = json.dumps(dict(zip(json_k, json_v)))
     outfile.write(result)
     infile.close()
     outfile.close()
+    os.remove(infilename)
+    unset_key("persist.env", "DECF")
+    set_key("persist.env", "ENCF", outfilename)
 
-    return outfilename
+    return
+
+
+''' decryptWithShamir(key, encfilename) takes the regenerated AES key
+    and decrypts a local file, with user provided filename
+    returns the plaintext file name, and deletes the encrypted local file
+'''
+
 
 def decryptWithShamir(key, encfilename):
     encfile = open(encfilename, 'r')
-    decfilename = encfilename + ".shared"
+    decfilename = encfilename.split(".")[0] + ".shared"
     decfile = open(decfilename, 'w')
     b64 = json.load(encfile)
     json_k = ['nonce', 'header', 'ciphertext', 'tag']
@@ -124,18 +216,27 @@ def decryptWithShamir(key, encfilename):
     json.dump(alist, decfile)
     decfile.close()
     encfile.close()
+    os.remove(encfilename)
     return decfilename
 
-def decryptFile(encfilename):
 
+''' decryptFile() decrypts the locally downloaded file
+    encrypted file name taken from .env
+    user provides file password, and salt is read from the 
+    encrypted download; encrypted file is deleted after processing
+    and plaintext filename is stored in .env    
+'''
+
+
+def decryptFile():
+    encfilename = get_key("persist.env", "ENCF")
     encfile = open(encfilename, 'r')
-    decfilename = encfilename + ".dec"
+    decfilename = encfilename.split(".")[0] + ".dec"
     decfile = open(decfilename, 'w')
     b64 = json.load(encfile)
     json_k = ['nonce', 'header', 'ciphertext', 'tag']
-    json_v = {k:b64decode(b64[k]) for k in json_k}
-
-    key = keyGenWithSalt(json_v['header'])
+    json_v = {k: b64decode(b64[k]) for k in json_k}
+    key = reGenKey(json_v['header'].hex())
     cipher = AES.new(key, AES.MODE_GCM, nonce=json_v['nonce'])
     cipher.update(json_v['header'])
     plaintext = cipher.decrypt_and_verify(json_v['ciphertext'], json_v['tag'])
@@ -143,45 +244,26 @@ def decryptFile(encfilename):
     json.dump(alist, decfile)
     decfile.close()
     encfile.close()
-    return decfilename
+    os.remove(encfilename)
+    unset_key("persist.env", "ENCF")
+    set_key("persist.env", "DECF", decfilename)
 
 
-'''
-def main():
-    key, salt = keyGen(PASSW)
-    tempf = "localcopy.json"
-    f = open(tempf, "w")
-    k = 3
-    n = 5
-
-    templist = []
-    for x in range(25):
-        url = "url" + str(x)
-        user = "user" + str(x)
-        passw = "pass" + str(x)
-        templist.append({'site': url, 'username': user, 'password': passw})
-
-    json.dump(templist, f)
-    f.close()
-
-    encfile = encryptFile(key, salt, tempf)
-    hmac = hmacGen(encfile)
-    flag = hmacVerify(encfile, hmac)
-    print(flag)
-    decfile = decryptFile(encfile)
-
-    shamirs = shamirCreate(salt, k, n)
-
-    newshares = []
-    for x in range(k):
-        newshares.append(shamirs[x])
-
-    shamirKey = shamirCombine(newshares)
-    sharefile = decryptWithShamir(shamirKey, encfile)
+''' Update the file password temporarily stored in .env
+    for encrypting the file
 '''
 
 
-if __name__ == '__main__':
-    main()
+def updateFilePassword(pwd):
+    passw = pwd.encode()
+    set_key("persist.env", "PWD", passw.hex())
+    # generate new salt
+    keyGen()
+    return
+
+
+
+
+
 
 

@@ -1,6 +1,7 @@
 import os
 import json
 import quickstart
+from dotenv import dotenv_values, set_key, unset_key
 
 from forms import passwordsForm, loginForm, shamirPage
 from titles import PASSWORD_FORM_TITLE, LOGIN_FORM_TITLE, SHAMIR_PAGE_TITLE
@@ -8,9 +9,11 @@ from handlers import PasswordsFormHandlers, LoginFormHandlers, ShamirPageHandler
 
 
 # program state
-password = None
-salt = None
-key = None
+# password = None
+# salt = None
+# key = None
+
+
 
 passwords = []
 if os.path.exists('localcopy.json'):
@@ -30,7 +33,7 @@ while True:
     elif type(event) is tuple:
         command = event[0]
         # LOGIN FORM ACTIONS
-        if window.Title == LOGIN_FORM_TITLE(): 
+        if window.Title == LOGIN_FORM_TITLE():
             if command == 'login':
                 password, key, salt = LoginFormHandlers.login(event, values)
                 window.close()
@@ -65,4 +68,9 @@ while True:
                 ShamirPageHandlers.email(event, values, shares)
         # CHANGE PASSWORD ACTIONS
 
+    # unset env vars before closing
+    unset_key("persist.env", "SALT")
+    unset_key("persist.env", "PWD")
+    unset_key("persist.env", "DECF")
+    unset_key("persist.env", "ENCF")
 window.close()
