@@ -15,6 +15,7 @@ from dotenv import set_key, unset_key, get_key
 import base64
 from email.mime.text import MIMEText
 from io import BytesIO
+import env
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://mail.google.com', 'https://www.googleapis.com/auth/drive.file']
@@ -26,14 +27,14 @@ SCOPES = ['https://mail.google.com', 'https://www.googleapis.com/auth/drive.file
 
 def create_folder():
     try:
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
         service_drive = build('drive', 'v3', credentials=creds)
         folder_metadata = {
             "name": "ShamirPasswords",
             "mimeType": "application/vnd.google-apps.folder"
         }
         folder = service_drive.files().create(body=folder_metadata, fields="id").execute()
-        set_key("persist.env", "FOLDER", folder.get("id"))
+        env.set("FOLDER", folder.get("id"))
     except HttpError as error:
         print(error)
 
@@ -46,15 +47,15 @@ def create_folder():
 
 def create_file():
     try:
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
         service_drive = build('drive', 'v3', credentials=creds)
         file_metadata = {
             "name": "secrets.txt",
-            "parents": [get_key("persist.env", "FOLDER")]
+            "parents": [env.get("FOLDER")]
         }
         media = MediaFileUpload(get_key("persist.env", "ENCF"), resumable=False)
         file = service_drive.files().create(body=file_metadata, media_body=media, fields='id').execute()
-        set_key("persist.env", "GFILE", file.get("id"))
+        env.set("GFILE", file.get("id"))
 
     except HttpError as error:
         print(error)
@@ -63,20 +64,20 @@ def create_file():
 
 
 def remove_file_encf():
-    os.remove(get_key("persist.env", "ENCF"))
-    unset_key("persist.env", "ENCF")
+    os.remove(env.get("ENCF"))
+    env.unset("ENCF")
 
 '''
 '''
 
 def upload_file():
     try:
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
         service_drive = build('drive', 'v3', credentials=creds)
-        media = MediaFileUpload(get_key("persist.env", "ENCF"), resumable=True)
-        file = service_drive.files().update(fileId=get_key("persist.env", "GFILE"), media_body=media).execute()
-        os.remove(get_key("persist.env", "ENCF"))
-        unset_key("persist.env", "ENCF")
+        media = MediaFileUpload(env.get("ENCF"), resumable=True)
+        file = service_drive.files().update(fileId=env.get("GFILE"), media_body=media).execute()
+        os.remove(env.get("ENCF"))
+        env.unset("ENCF")
 
     except HttpError as error:
         print(error)
@@ -89,12 +90,12 @@ def upload_file():
 
 def download_file():
     try:
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
         service_drive = build('drive', 'v3', credentials=creds)
-        set_key("persist.env", "ENCF", "download.enc")
-        file = open(get_key("persist.env", "ENCF"), 'wb')
+        env.set("ENCF", "outputs/download.enc")
+        file = open(env.get("ENCF"), 'wb')
         fh = io.BytesIO()
-        request = service_drive.files().get_media(fileId=get_key("persist.env", "GFILE"))
+        request = service_drive.files().get_media(fileId=env.get("GFILE"))
         download = MediaIoBaseDownload(fh, request)
         done = False
         while done is False:
@@ -115,7 +116,7 @@ def build_message(receiver, shamir_key):
     subject = "New Shamir Key Share"
     message = MIMEText(message_text)
     message['to'] = receiver
-    message['from'] = get_key("persist.env", "SENDER")
+    message['from'] = env.get("SENDER")
     message['subject'] = subject
     return {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
 
@@ -126,12 +127,12 @@ def build_message(receiver, shamir_key):
 
 def send_shamir():
     try:
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
         service_mail = build('gmail', 'v1', credentials=creds)
         profile = service_mail.users().getProfile(userId='me').execute()
-        set_key("persist.env", "SENDER", profile.get('emailAddress'))
-        receivers = get_key("persist.env", "RECEIVERS")
-        shamir_keys = get_key("persist.env", "SHARES")
+        env.set("SENDER", profile.get('emailAddress'))
+        receivers = env.get("RECEIVERS")
+        shamir_keys = env.get("SHARES")
         r = receivers.split(", ")
         s = shamir_keys.split(" ")
         for x in range(len(r)):
@@ -150,8 +151,8 @@ def getAuth():
     os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
     creds = None
 
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if os.path.exists('keys/token.json'):
+        creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
 
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
@@ -159,9 +160,9 @@ def getAuth():
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'client_secret.json', SCOPES)
+                'keys/client_secret.json', SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('token.json', 'w') as token:
+        with open('keys/token.json', 'w') as token:
             token.write(creds.to_json())
     return
