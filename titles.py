@@ -6,3 +6,6 @@ def LOGIN_FORM_TITLE():
 
 def SHAMIR_PAGE_TITLE():
 	return 'PUD - Shamir Shares'
+
+def ERROR_PAGE_TITLE():
+	return 'PUD - Error!'

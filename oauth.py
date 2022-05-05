@@ -11,7 +11,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from googleapiclient.http import MediaIoBaseDownload
-from dotenv import set_key, unset_key, get_key
 import base64
 from email.mime.text import MIMEText
 from io import BytesIO
@@ -37,8 +36,8 @@ def create_folder():
         env.set("FOLDER", folder.get("id"))
     except HttpError as error:
         print(error)
-
-    return
+        return False
+    return True
 
 
 '''
@@ -53,19 +52,34 @@ def create_file():
             "name": "secrets.txt",
             "parents": [env.get("FOLDER")]
         }
-        media = MediaFileUpload(get_key("persist.env", "ENCF"), resumable=False)
+        media = MediaFileUpload(env.get("ENCF"), resumable=False)
         file = service_drive.files().create(body=file_metadata, media_body=media, fields='id').execute()
         env.set("GFILE", file.get("id"))
 
     except HttpError as error:
         print(error)
-    return
+        return False
+    return True
 
 
 
 def remove_file_encf():
-    os.remove(env.get("ENCF"))
-    env.unset("ENCF")
+    try:
+        os.remove(env.get("ENCF"))
+        env.unset("ENCF")
+    except:
+        pass
+    finally: 
+        pass
+
+def remove_file_decf():
+    try:
+        os.remove(env.get('DECF'))
+        env.unset('DECF')
+    except:
+        pass
+    finally:
+        pass
 
 '''
 '''
@@ -76,8 +90,8 @@ def upload_file():
         service_drive = build('drive', 'v3', credentials=creds)
         media = MediaFileUpload(env.get("ENCF"), resumable=True)
         file = service_drive.files().update(fileId=env.get("GFILE"), media_body=media).execute()
-        os.remove(env.get("ENCF"))
-        env.unset("ENCF")
+        #os.remove(env.get("ENCF"))
+        #env.unset("ENCF")
 
     except HttpError as error:
         print(error)
@@ -102,9 +116,17 @@ def download_file():
             status, done = download.next_chunk()
             print ("Download %d%%." % int(status.progress() * 100))
         file.write(fh.getbuffer())
+        file.close()
     except HttpError as error:
         print(error)
-    return
+        env.unset('GFILE')
+        env.unset('FOLDER')
+        return False
+    except:
+        env.unset('GFILE')
+        env.unset('FOLDER')
+    else:
+        return True
 
 
 '''TODO share file, update file permissions, revoke file permissions'''
