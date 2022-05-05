@@ -31,10 +31,6 @@ def test():
     # get oauth token.json
     getAuth()
 
-    # generate an aes key with a random salt and the provided password
-    # salt is stored in .env
-    keyGen()
-
     #encrypt the file locally
     encryptFile()
 

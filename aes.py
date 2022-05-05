@@ -91,17 +91,14 @@ def keyGenWithSalt():
     return key
 
 
-''' keyGen() generates a 256-bit key
+''' saltGen() generates a 256-bit key
     from the user provided file password
     and a randomly generated 32-byte salt
 '''
 
-def keyGen():
-    password = bytes.fromhex(env.get("PWD"))
+def saltGen():
     salt = get_random_bytes(32).hex()
     env.set("SALT", salt)
-    key = scrypt(password, salt, 32, N=2 ** 20, r=8, p=1)
-    return
 
 
 ''' shamirCreate() generates N keys where
@@ -184,8 +181,6 @@ def encryptFile():
     outfile.write(result)
     infile.close()
     outfile.close()
-    os.remove(infilename)
-    env.unset("DECF")
     env.set("ENCF", outfilename)
 
     return
@@ -212,7 +207,6 @@ def decryptWithShamir(key, encfilename):
     json.dump(alist, decfile)
     decfile.close()
     encfile.close()
-    os.remove(encfilename)
     return decfilename
 
 
@@ -232,6 +226,7 @@ def decryptFile():
     b64 = json.load(encfile)
     json_k = ['nonce', 'header', 'ciphertext', 'tag']
     json_v = {k: b64decode(b64[k]) for k in json_k}
+    env.set('SALT', json_v['header'].hex())
     key = reGenKey(json_v['header'].hex())
     cipher = AES.new(key, AES.MODE_GCM, nonce=json_v['nonce'])
     cipher.update(json_v['header'])
@@ -240,7 +235,6 @@ def decryptFile():
     json.dump(alist, decfile)
     decfile.close()
     encfile.close()
-    os.remove(encfilename)
     env.unset("ENCF")
     env.set("DECF", decfilename)
 
@@ -253,9 +247,26 @@ def decryptFile():
 def updateFilePassword(pwd):
     passw = pwd.encode()
     env.set("PWD", passw.hex())
-    # generate new salt
-    keyGen()
-    return
+
+def writePasswords(passwords):
+    try:
+        f = open(env.get('DECF'), 'w+')
+        f.seek(0)
+        json.dump(passwords, f)
+        f.truncate()
+        f.close()
+    except:
+        print('problem writing to DECF')
+
+def getPasswords():
+    try:
+        f = open(env.get('DECF'), 'rb')
+        passwords = json.load(f)
+        f.close()
+        return passwords
+    except:
+        print('problem reading to DECF')
+        return []
 
 
 

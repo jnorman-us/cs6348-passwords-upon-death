@@ -1,11 +1,16 @@
 import PySimpleGUI as sg
+import env
+import aes
 
-from titles import PASSWORD_FORM_TITLE, LOGIN_FORM_TITLE, SHAMIR_PAGE_TITLE
+from titles import PASSWORD_FORM_TITLE, LOGIN_FORM_TITLE, SHAMIR_PAGE_TITLE, ERROR_PAGE_TITLE
+
 
 sg.theme('black')
 size = (20, 1)
 
-def passwordsForm(passwords):
+def passwordsForm():
+	passwords = aes.getPasswords()
+
 	password_columns = []
 	password_columns.append([
 		sg.Text('Site:', size=size), 
@@ -72,3 +77,10 @@ def shamirPage(t, n, shares):
 		],
 	]
 	return sg.Window(SHAMIR_PAGE_TITLE(), layout, finalize=True)
+
+def errorPage(error):
+	layout = [
+		[sg.Text('ERROR!')],
+		[sg.Text(error)],
+	]
+	return sg.Window(ERROR_PAGE_TITLE(), layout, finalize=True)

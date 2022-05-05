@@ -1,8 +1,9 @@
 import json
+import env
 
-from aes import keyGen
+import aes
+import oauth
 
-file_name = "localcopy.json"
 # not a real class, just organization
 class PasswordsFormHandlers:
 	@staticmethod
@@ -21,8 +22,7 @@ class PasswordsFormHandlers:
 			'username': '',
 			'password': '',
 		})
-
-		return passwords
+		aes.writePasswords(passwords)
 
 	@staticmethod
 	def delete(event, values):
@@ -36,7 +36,7 @@ class PasswordsFormHandlers:
 					'username': values[('username', i)],
 					'password': values[('password', i)],
 				})
-		return passwords
+		aes.writePasswords(passwords)
 
 	@staticmethod
 	def save(event, values):
@@ -48,20 +48,33 @@ class PasswordsFormHandlers:
 				'username': values[('username', i)],
 				'password': values[('password', i)],
 			})
-
-		with open(file_name, 'w+') as file:
-			file.seek(0)
-			json.dump(passwords, file)
-			file.truncate()
-
-		return passwords
+		aes.writePasswords(passwords)
+		aes.encryptFile()
+		oauth.upload_file()	
 
 class LoginFormHandlers:
 	@staticmethod
 	def login(event, values):
 		password = values['password']
-		key, salt = keyGen(password)
-		return password, key, salt
+		aes.updateFilePassword(password)
+
+		if oauth.download_file():
+			try:
+				aes.decryptFile()
+			except Exception as e:
+				print(e)
+				raise Exception('Failed to decrypt!')
+		else:
+			success = oauth.create_folder()
+			success = success and oauth.create_file()
+			if success:
+				aes.saltGen()
+				env.set('DECF', 'outputs/download.dec')
+				aes.writePasswords([])
+			else:
+				raise Exception('Failed to create Google Files')
+
+
 
 class ShamirPageHandlers:
 	@staticmethod
