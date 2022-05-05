@@ -1,11 +1,11 @@
 from aes import *
 from oauth import *
-from dotenv import set_key, unset_key, get_key
+import env
 import os
 
 
 def helper():
-    tempf = "original.txt"
+    tempf = "outputs/original.txt"
     f = open(tempf, "w")
 
     templist = []
@@ -16,7 +16,7 @@ def helper():
         templist.append({'site': url, 'username': user, 'password': passw})
 
     json.dump(templist, f)
-    set_key("persist.env", "DECF", tempf)
+    env.set("DECF", tempf)
     f.close()
 
 def test():
@@ -68,33 +68,33 @@ def test():
     encryptFile()
 
     # create 2/3 shamir keys
-    set_key("persist.env", "K", "2")
-    set_key("persist.env", "N", "3")
+    env.set("K", "2")
+    env.set("N", "3")
     shamirCreate()
 
     # get gmail addresses for sharing, testing only right now
     #set_key("persist.env", "RECEIVERS", "mbaileyking@gmail.com, mbaileyking@gmail.com, mbaileyking@gmail.com")
 
     #add your own emails for testing
-    set_key("persist.env", "RECEIVERS", "")
+    env.set("RECEIVERS", "")
 
     #email shamir keys
     send_shamir()
 
     #get shares from gui (temp hardcode)
-    newshares = get_key("persist.env", "SHARES").split(" ", 2)
+    newshares = env.get("SHARES").split(" ", 2)
 
     #combine k shares
     shamirKey = shamirCombine(newshares)
 
     # check if shamir decrypt works (just using local enc file rn)
-    sharefile = decryptWithShamir(shamirKey, get_key("persist.env", "ENCF"))
+    sharefile = decryptWithShamir(shamirKey, env.get("ENCF"))
 
     print(sharefile)
 
     # remove non-persistent info from .env
-    unset_key("persist.env", "SALT")
-    unset_key("persist.env", "PWD")
+    env.unset("SALT")
+    env.unset("PWD")
     #unset_key("persist.env", "DECF")
     #unset_key("persist.env", "ENCF")
 

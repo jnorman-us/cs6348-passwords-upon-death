@@ -17,8 +17,8 @@ import json
 from base64 import b64encode
 from base64 import b64decode
 from Crypto.Hash import HMAC, SHA256
-from dotenv import dotenv_values, set_key, unset_key, get_key
 import os
+import env
 
 
 ''' hmacGen creates an HMAC digest from the local encrypted
@@ -30,15 +30,15 @@ import os
 
 
 def hmacGen():
-    encf = get_key("persist.env", "ENCF")
+    encf = env.get("ENCF")
     f = open(encf, 'rb')
     msg = f.read()
     secret = get_random_bytes(16)
-    set_key("persist.env", "SECRET", secret.hex())
+    env.set("SECRET", secret.hex())
     h = HMAC.new(secret, digestmod=SHA256)
     h.update(msg)
     f.close()
-    set_key("persist.env", "HMAC", h.hexdigest())
+    env.set("HMAC", h.hexdigest())
     return
 
 
@@ -48,17 +48,17 @@ def hmacGen():
 '''
 
 def hmacVerify():
-    encf = get_key("persist.env", "ENCF")
+    encf = env.get("ENCF")
     f = open(encf, 'rb')
     msg = f.read()
-    secret = get_key("persist.env", "SECRET")
-    hmac = get_key("persist.env", "HMAC")
+    secret = env.get("SECRET")
+    hmac = env.get("HMAC")
     h = HMAC.new(bytes.fromhex(secret), digestmod=SHA256)
     h.update(msg)
     try:
         h.hexverify(hmac)
-        unset_key("persist.env", "SECRET")
-        unset_key("persist.env", "HMAC")
+        env.unset("SECRET")
+        env.unset("HMAC")
         return 1
     except ValueError:
         '''TODO - allow user to delete file on drive? and re-upload'''
@@ -71,7 +71,7 @@ def hmacVerify():
 '''
 
 def reGenKey(salt):
-    passw = get_key("persist.env", "PWD")
+    passw = env.get("PWD")
     password = passw.encode()
     key = scrypt(password, salt, 32, N=2 ** 20, r=8, p=1)
     return key
@@ -83,10 +83,9 @@ def reGenKey(salt):
     For use in current session only
 '''
 
-
 def keyGenWithSalt():
-    passw = get_key("persist.env", "PWD")
-    salt = get_key("persist.env", "SALT")
+    passw = env.get("PWD")
+    salt = env.get("SALT")
     password = passw.encode()
     key = scrypt(password, salt, 32, N=2 ** 20, r=8, p=1)
     return key
@@ -97,11 +96,10 @@ def keyGenWithSalt():
     and a randomly generated 32-byte salt
 '''
 
-
 def keyGen():
-    password = bytes.fromhex(get_key("persist.env", "PWD"))
+    password = bytes.fromhex(env.get("PWD"))
     salt = get_random_bytes(32).hex()
-    set_key("persist.env", "SALT", salt)
+    env.set("SALT", salt)
     key = scrypt(password, salt, 32, N=2 ** 20, r=8, p=1)
     return
 
@@ -110,11 +108,9 @@ def keyGen():
     K keys are necessary to fetch the AES key
     K, N from .env; shares saved in list in .env 
 '''
-
-
 def shamirCreate():
-    k = int(get_key("persist.env", "K"))
-    n = int(get_key("persist.env", "N"))
+    k = int(env.get("K"))
+    n = int(env.get("N"))
 
     # get key from password and salt
     key = keyGenWithSalt()
@@ -136,7 +132,7 @@ def shamirCreate():
     for x in range(len(shares)):
         shares_string += shares[x]
         shares_string += " "
-    set_key("persist.env", "SHARES", shares_string)
+    env.set("SHARES", shares_string)
     return
 
 
@@ -172,14 +168,14 @@ def shamirCombine(kshares):
 
 
 def encryptFile():
-    infilename = str(get_key("persist.env", "DECF"))
+    infilename = str(env.get("DECF"))
     key = keyGenWithSalt()
     outfilename = infilename.split(".")[0] + ".enc"
     infile = open(infilename, 'rb')
     outfile = open(outfilename, 'w')
     cipher = AES.new(key, AES.MODE_GCM)
     data = infile.read()
-    salt = bytes.fromhex(get_key("persist.env", "SALT"))
+    salt = bytes.fromhex(env.get("SALT"))
     cipher.update(salt)
     ciphertext, tag = cipher.encrypt_and_digest(data)
     json_k = ['nonce', 'header', 'ciphertext', 'tag']
@@ -189,8 +185,8 @@ def encryptFile():
     infile.close()
     outfile.close()
     os.remove(infilename)
-    unset_key("persist.env", "DECF")
-    set_key("persist.env", "ENCF", outfilename)
+    env.unset("DECF")
+    env.set("ENCF", outfilename)
 
     return
 
@@ -229,7 +225,7 @@ def decryptWithShamir(key, encfilename):
 
 
 def decryptFile():
-    encfilename = get_key("persist.env", "ENCF")
+    encfilename = env.get("ENCF")
     encfile = open(encfilename, 'r')
     decfilename = encfilename.split(".")[0] + ".dec"
     decfile = open(decfilename, 'w')
@@ -245,8 +241,8 @@ def decryptFile():
     decfile.close()
     encfile.close()
     os.remove(encfilename)
-    unset_key("persist.env", "ENCF")
-    set_key("persist.env", "DECF", decfilename)
+    env.unset("ENCF")
+    env.set("DECF", decfilename)
 
 
 ''' Update the file password temporarily stored in .env
@@ -256,7 +252,7 @@ def decryptFile():
 
 def updateFilePassword(pwd):
     passw = pwd.encode()
-    set_key("persist.env", "PWD", passw.hex())
+    env.set("PWD", passw.hex())
     # generate new salt
     keyGen()
     return

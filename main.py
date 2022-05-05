@@ -1,28 +1,16 @@
 import os
 import json
 import quickstart
-from dotenv import dotenv_values, set_key, unset_key
+from dotenv import get_key, set_key, unset_key
 
 from forms import passwordsForm, loginForm, shamirPage
 from titles import PASSWORD_FORM_TITLE, LOGIN_FORM_TITLE, SHAMIR_PAGE_TITLE
 from handlers import PasswordsFormHandlers, LoginFormHandlers, ShamirPageHandlers
 
-
-# program state
-# password = None
-# salt = None
-# key = None
-
-
-
 passwords = []
 if os.path.exists('localcopy.json'):
     with open('localcopy.json', 'r+') as file:
         passwords = json.load(file)
-
-shamir_t = 0
-shamir_n = 0
-shares = []
 
 # first window to open
 window = loginForm()
