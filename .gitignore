@@ -1,3 +1,4 @@
 env/
 localcopy*
 !persist.env
+__pycache__/
