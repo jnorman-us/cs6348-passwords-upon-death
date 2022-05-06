@@ -13,14 +13,15 @@ from googleapiclient.http import MediaFileUpload
 from googleapiclient.http import MediaIoBaseDownload
 import base64
 from email.mime.text import MIMEText
-from io import BytesIO
 import env
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://mail.google.com', 'https://www.googleapis.com/auth/drive.file']
 
 
-'''
+''' 
+    create_folder() creates a new folder in the users google drive
+    titled "ShamirPasswords" and stores the folderid in .env as "FOLDER"
 '''
 
 
@@ -40,7 +41,9 @@ def create_folder():
     return True
 
 
-'''
+'''  
+    create_file() creates a new file titled 'secrets.txt' in the users designated google drive folder
+    using the folder id from .env "FOLDER"; stores the new file id in .env "GFILE"
 '''
 
 
@@ -62,6 +65,52 @@ def create_file():
     return True
 
 
+''' 
+    get_gfile_permisions 
+    returns a permissions resource
+    from the oauth and fileid attributes
+    USED FOR TESTING VERIFICATION ONLY
+'''
+
+
+def get_gfile_permissions():
+    try:
+        creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
+        service_drive = build('drive', 'v3', credentials=creds)
+        perms = service_drive.permissions().list(fileId=env.get("GFILE")).execute()
+
+    except HttpError as error:
+        print(error)
+    return perms
+
+
+'''
+    share_gfile() shares the users designated google secrets.txt file (in encrypted format)
+    with the user supplied email addresses for shamir keys.  Currently, there is no way to verify 
+    if these email addresses are valid
+'''
+
+
+def share_gfile():
+    try:
+        creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
+        service_drive = build('drive', 'v3', credentials=creds)
+        receivers = env.get("RECEIVERS")
+        rx = receivers.split(" ", -1)
+        for rcp in rx:
+            grant = {'role': 'writer', 'type': 'user', 'emailAddress': rcp}
+            perms = service_drive.permissions().create(fileId=env.get("GFILE"), body=grant).execute()
+
+    except HttpError as error:
+        print(error)
+    return
+
+
+'''
+    remove_file_encf() removes the local copy of the encrypted file and resets
+    the file name of .env "ENCF" to null
+'''
+
 
 def remove_file_encf():
     try:
@@ -72,6 +121,13 @@ def remove_file_encf():
     finally: 
         pass
 
+
+'''
+    remove_file_decf() removes the local copy of the encrypted file and resets
+    the file name of .env "DECF" to null
+'''
+
+
 def remove_file_decf():
     try:
         os.remove(env.get('DECF'))
@@ -81,8 +137,11 @@ def remove_file_decf():
     finally:
         pass
 
+
+''' 
+    upload_file() overwrites the existing google drive doc secrets.txt with the newly encrypted information
 '''
-'''
+
 
 def upload_file():
     try:
@@ -90,8 +149,6 @@ def upload_file():
         service_drive = build('drive', 'v3', credentials=creds)
         media = MediaFileUpload(env.get("ENCF"), resumable=True)
         file = service_drive.files().update(fileId=env.get("GFILE"), media_body=media).execute()
-        #os.remove(env.get("ENCF"))
-        #env.unset("ENCF")
 
     except HttpError as error:
         print(error)
@@ -99,9 +156,11 @@ def upload_file():
 
 
 '''
+    download_fil() downloads the encrypted google drive doc secrets.txt from the users drive
+    using .env "GFILE" for file id, and stores locally in outputs/download.enc
 '''
 
-
+'''TODO does this work as is, or do we need to create the outputs folder first?'''
 def download_file():
     try:
         creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
@@ -114,7 +173,7 @@ def download_file():
         done = False
         while done is False:
             status, done = download.next_chunk()
-            print ("Download %d%%." % int(status.progress() * 100))
+            #print ("Download %d%%." % int(status.progress() * 100))
         file.write(fh.getbuffer())
         file.close()
     except HttpError as error:
@@ -129,7 +188,28 @@ def download_file():
         return True
 
 
-'''TODO share file, update file permissions, revoke file permissions'''
+'''
+    TODO:
+    destroy_gfile() deletes the users (possibly shared) google drive file called
+    secrets.txt.  Should be called if the user decides to change receipients, etc.
+'''
+
+
+def destroy_gfile():
+    try:
+        creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
+        service_drive = build('drive', 'v3', credentials=creds)
+        empty = service_drive.files().delete(fileId=env.get("GFILE")).execute()
+        print(empty)
+    except HttpError as error:
+        print(error)
+    return
+
+
+'''
+    build_message() uses the receipient's email address and the generated shamir key to
+    formate a gmail message in order to send the key to the receipient
+'''
 
 
 def build_message(receiver, shamir_key):
@@ -144,6 +224,8 @@ def build_message(receiver, shamir_key):
 
 
 '''
+    send_shamir() parses .env "RECEIVERS" and "SHARES" for the tuple of
+    receipient, shamir_key in order to email the designated receipients the keys
 '''
 
 
@@ -164,6 +246,8 @@ def send_shamir():
 
 
 '''
+    getAuth() is oauth login for apis, stores token in 
+    keys/token.json
 '''
 
 
