@@ -2,10 +2,11 @@ import os
 import json
 import env
 import oauth
+import traceback
+import titles
 
-from forms import passwordsForm, loginForm, shamirPage, errorPage
-from titles import PASSWORD_FORM_TITLE, LOGIN_FORM_TITLE, SHAMIR_PAGE_TITLE
-from handlers import PasswordsFormHandlers, LoginFormHandlers, ShamirPageHandlers
+from forms import passwordsForm, loginForm, shamirPage, errorPage, shamirForm, passwordsPage
+from handlers import PasswordsFormHandlers, LoginFormHandlers, ShamirPageHandlers, ShamirFormHandlers
 
 # first step, get oauth token
 oauth.getAuth()
@@ -20,13 +21,16 @@ while True:
         command = event[0]
         try:
             # LOGIN FORM ACTIONS
-            if window.Title == LOGIN_FORM_TITLE():
+            if window.Title == titles.LOGIN_FORM():
                 if command == 'login':
                     LoginFormHandlers.login(event, values)
                     window.close()
                     window = passwordsForm()
+                elif command == 'shamir':
+                    window.close()
+                    window = shamirForm()
             # PASSWORD FORM ACTIONS
-            elif window.Title == PASSWORD_FORM_TITLE():
+            elif window.Title == titles.PASSWORD_FORM():
                 if command == 'add':
                     PasswordsFormHandlers.add(event, values)
                     window.close()
@@ -42,18 +46,36 @@ while True:
                 elif command == 'shamir':
                     window.close()
                     window = shamirPage()
-            # SHAMIR FORM ACTIONS
-            elif window.Title == SHAMIR_PAGE_TITLE():
+            # SHAMIR PAGE ACTIONS
+            elif window.Title == titles.SHAMIR_PAGE():
                 if command == 'passwords':
                     window.close()
                     window = passwordsForm()
                 elif command == 'generate':
-                    hamirPageHandlers.generate(event, values)
+                    ShamirPageHandlers.generate(event, values)
                     window.close()
                     window = shamirPage()
                 elif command == 'email':
                     ShamirPageHandlers.email(event, values)
+            # SHAMIR FORM ACTIONS
+            elif window.Title == titles.SHAMIR_FORM():
+                if command == 'login':
+                    window.close()
+                    window = loginForm()
+                elif command == 'add':
+                    ShamirFormHandlers.add(event, values)
+                    window.close()
+                    window = shamirForm()
+                elif command == 'delete':
+                    ShamirFormHandlers.delete(event, values)
+                    window.close()
+                    window = shamirForm()
+                elif command == 'combine':
+                    ShamirFormHandlers.combine(event, values)
+                    window.close()
+                    window = passwordsPage()
         except Exception as e:
+            traceback.print_exc()
             print(e)
             window.close()
             window = errorPage(str(e))
@@ -62,5 +84,11 @@ oauth.remove_file_encf()
 oauth.remove_file_decf()
 env.unset('PWD')
 env.unset('SALT')
+env.unset('SHARES')
+env.unset('RECEIVERS')
+env.unset('INPUT_SHARES')
+env.unset('SENDER')
+env.unset('K')
+env.unset('N')
 
 window.close()

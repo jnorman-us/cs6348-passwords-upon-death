@@ -125,11 +125,7 @@ def shamirCreate():
         bytestring += sh2[0:16]
         shares.append(bytestring.hex())
 
-    shares_string = ''
-    for x in range(len(shares)):
-        shares_string += shares[x]
-        shares_string += " "
-    env.set("SHARES", shares_string)
+    env.set("SHARES", json.dumps(shares))
     return
 
 
@@ -192,7 +188,8 @@ def encryptFile():
 '''
 
 
-def decryptWithShamir(key, encfilename):
+def decryptWithShamir(key):
+    encfilename = env.get('ENCF')
     encfile = open(encfilename, 'r')
     decfilename = encfilename.split(".")[0] + ".shared"
     decfile = open(decfilename, 'w')
@@ -207,7 +204,7 @@ def decryptWithShamir(key, encfilename):
     json.dump(alist, decfile)
     decfile.close()
     encfile.close()
-    return decfilename
+    env.set('DECF', decfilename)
 
 
 ''' decryptFile() decrypts the locally downloaded file
@@ -235,7 +232,6 @@ def decryptFile():
     json.dump(alist, decfile)
     decfile.close()
     encfile.close()
-    env.unset("ENCF")
     env.set("DECF", decfilename)
 
 

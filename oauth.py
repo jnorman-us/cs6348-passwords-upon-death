@@ -133,7 +133,7 @@ def download_file():
 
 
 def build_message(receiver, shamir_key):
-    message_text = "A new Shamir secret key has been shared with you by " + get_key("persist.env",  "SENDER") + ". \
+    message_text = "A new Shamir secret key has been shared with you by " + env.get("SENDER") + ". \
      Please keep it in a safe place! \n\nKey:  " + shamir_key
     subject = "New Shamir Key Share"
     message = MIMEText(message_text)
@@ -153,10 +153,8 @@ def send_shamir():
         service_mail = build('gmail', 'v1', credentials=creds)
         profile = service_mail.users().getProfile(userId='me').execute()
         env.set("SENDER", profile.get('emailAddress'))
-        receivers = env.get("RECEIVERS")
-        shamir_keys = env.get("SHARES")
-        r = receivers.split(", ")
-        s = shamir_keys.split(" ")
+        r = json.loads(env.get("RECEIVERS"))
+        s = json.loads(env.get("SHARES"))
         for x in range(len(r)):
             service_mail.users().messages().send(userId="me", body=build_message(r[x], s[x])).execute()
 

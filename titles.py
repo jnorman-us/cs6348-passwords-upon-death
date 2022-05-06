@@ -1,11 +1,17 @@
-def PASSWORD_FORM_TITLE():
+def PASSWORD_FORM():
 	return 'PUD - Edit Passwords'
 
-def LOGIN_FORM_TITLE():
+def PASSWORD_PAGE():
+	return 'PUD - View the Deceased\'s Passwords'
+
+def LOGIN_FORM():
 	return 'PUD - Login'
 
-def SHAMIR_PAGE_TITLE():
-	return 'PUD - Shamir Shares'
+def SHAMIR_PAGE():
+	return 'PUD - View Shamir Shares'
 
-def ERROR_PAGE_TITLE():
+def SHAMIR_FORM():
+	return 'PUD - Combine Shamir'
+
+def ERROR_PAGE():
 	return 'PUD - Error!'
