@@ -26,10 +26,14 @@ def test():
 
     # set the user's first file password
     #would normally come from gui
+    saltGen()
     updateFilePassword("firstPassword")
 
     # get oauth token.json
     getAuth()
+
+    #check file permissions if needed
+    #get_gfile_permissions()
 
     #encrypt the file locally
     encryptFile()
@@ -44,8 +48,6 @@ def test():
     # for user's first time create/upload file in one go
     # file id in .env
     create_file()
-
-    #processing competition
     remove_file_encf()
 
     # download file
@@ -69,32 +71,36 @@ def test():
     shamirCreate()
 
     # get gmail addresses for sharing, testing only right now
-    #set_key("persist.env", "RECEIVERS", "mbaileyking@gmail.com, mbaileyking@gmail.com, mbaileyking@gmail.com")
+    #env.set("RECEIVERS", "mbaileyking@gmail.com") #, mbaileyking@gmail.com, mbaileyking@gmail.com")
+
 
     #add your own emails for testing
     env.set("RECEIVERS", "")
-
+    #share the google file
+    share_gfile()
     #email shamir keys
     send_shamir()
 
+    #delete secrets.txt file from drive
+    destroy_gfile()
     #get shares from gui (temp hardcode)
-    newshares = env.get("SHARES").split(" ", 2)
+    #newshares = env.get("SHARES").split(" ", 2)
 
     #combine k shares
-    shamirKey = shamirCombine(newshares)
+    #shamirKey = shamirCombine(newshares)
 
     # check if shamir decrypt works (just using local enc file rn)
-    sharefile = decryptWithShamir(shamirKey, env.get("ENCF"))
+    #sharefile = decryptWithShamir(shamirKey, env.get("ENCF"))
 
-    print(sharefile)
+    #print(sharefile)
 
     # remove non-persistent info from .env
     env.unset("SALT")
     env.unset("PWD")
     #unset_key("persist.env", "DECF")
     #unset_key("persist.env", "ENCF")
-
+    '''
     return
 
-if __name__ == '__main__':
-    test()
+#if __name__ == '__main__':
+test()
