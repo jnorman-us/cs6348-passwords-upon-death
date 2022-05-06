@@ -4,6 +4,8 @@ import env
 import aes
 import oauth
 
+from utils import emptyArrayOf
+
 # not a real class, just organization
 class PasswordsFormHandlers:
 	@staticmethod
@@ -74,26 +76,60 @@ class LoginFormHandlers:
 			else:
 				raise Exception('Failed to create Google Files')
 
+class ShamirFormHandlers:
+	@staticmethod
+	def add(event, values):
+		shares = []
+		for key, value in values.items():
+			if type(key) is tuple and key[0] == 'share':
+				shares.append(value)
 
+		shares.append('')
+		env.set('INPUT_SHARES', json.dumps(shares))
+
+	@staticmethod
+	def delete(event, values):
+		delete_id = event[1]
+		shares = []
+		for key, value in values.items():
+			if type(key) is tuple and key[0] == 'share' and key[1] != delete_id:
+				shares.append(value)
+		env.set('INPUT_SHARES', json.dumps(shares))
+
+	@staticmethod
+	def combine(event, values):
+		shares = []
+		for key, value in values.items():
+			if type(key) is tuple and key[0] == 'share':
+				shares.append(value)
+		env.set('INPUT_SHARES', json.dumps(shares))
+		key = aes.shamirCombine(shares)
+
+		if oauth.download_file():
+			try:
+				aes.decryptWithShamir(key)
+			except:
+				raise Exception('Failed to decrypt!')
+		else:
+			raise Exception('Google File does not exist')
 
 class ShamirPageHandlers:
 	@staticmethod
 	def generate(event, values):
-		try:
-			t = int(values['t'])
-			n = int(values['n'])
-		except:
-			return (0, 0, [])
-
-		print('GENERATING %d SHARES, %d to reconstruct' % (n, t))
-
-		return (t, n, [
-			'share 1',
-			'share 2',
-			'share 3',
-		])
+		k = values['k']
+		n = values['n']
+		env.set('K', k)
+		env.set('N', n)
+		aes.shamirCreate()
+		env.set('RECEIVERS', json.dumps(emptyArrayOf(int(n))))
 
 	@staticmethod
-	def email(event, values, shares):
-		print('Emailing...')
-		print(shares)
+	def email(event, values):
+		n = int(env.get('N'))
+		recipients = []
+		for i in range(n):
+			share_i = i + 1
+			recipients.append(values[('share', share_i)])
+		print(recipients)
+		env.set('RECEIVERS', json.dumps(recipients))
+		oauth.send_shamir()
