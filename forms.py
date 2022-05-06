@@ -7,7 +7,7 @@ from utils import emptyArrayOf
 
 import titles
 
-sg.theme('black')
+sg.theme('HotDogStand')
 size = (20, 1)
 
 def passwordsForm():

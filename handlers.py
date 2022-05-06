@@ -132,4 +132,5 @@ class ShamirPageHandlers:
 			recipients.append(values[('share', share_i)])
 		print(recipients)
 		env.set('RECEIVERS', json.dumps(recipients))
+		oauth.share_gfile()
 		oauth.send_shamir()

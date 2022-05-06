@@ -16,7 +16,7 @@ from email.mime.text import MIMEText
 import env
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ['https://mail.google.com', 'https://www.googleapis.com/auth/drive.file']
+SCOPES = ['https://mail.google.com', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.readonly']
 
 
 ''' 
@@ -95,8 +95,7 @@ def share_gfile():
     try:
         creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
         service_drive = build('drive', 'v3', credentials=creds)
-        receivers = env.get("RECEIVERS")
-        rx = receivers.split(" ", -1)
+        rx = json.loads(env.get("RECEIVERS"))
         for rcp in rx:
             grant = {'role': 'writer', 'type': 'user', 'emailAddress': rcp}
             perms = service_drive.permissions().create(fileId=env.get("GFILE"), body=grant).execute()
@@ -181,9 +180,10 @@ def download_file():
         env.unset('GFILE')
         env.unset('FOLDER')
         return False
-    except:
+    except Exception as e:
         env.unset('GFILE')
         env.unset('FOLDER')
+        return False
     else:
         return True
 
