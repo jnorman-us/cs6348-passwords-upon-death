@@ -59,9 +59,9 @@ def passwordsPage():
 		username = data['username']
 		password = data['password']
 		password_columns.append([
-			sg.Text(site, size=size),
-			sg.Text(username, size=size),
-			sg.Text(password, size=size),
+			sg.InputText(default_text=site, size=size, disabled=True),
+			sg.InputText(default_text=username, size=size, disabled=True),
+			sg.InputText(default_text=password, size=size, disabled=True),
 		])
 
 	layout = [
