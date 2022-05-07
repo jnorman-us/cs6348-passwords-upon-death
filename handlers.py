@@ -54,6 +54,13 @@ class PasswordsFormHandlers:
 		aes.encryptFile()
 		oauth.upload_file()	
 
+class ChangePwFormHandlers:
+	@staticmethod
+	def change(event, values):
+		password = values['password']
+		aes.updateFilePassword(password)
+		aes.saltGen() #correct method to call?
+
 class LoginFormHandlers:
 	@staticmethod
 	def login(event, values):

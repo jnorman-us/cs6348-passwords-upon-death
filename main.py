@@ -5,8 +5,8 @@ import oauth
 import traceback
 import titles
 
-from forms import passwordsForm, loginForm, shamirPage, errorPage, shamirForm, passwordsPage
-from handlers import PasswordsFormHandlers, LoginFormHandlers, ShamirPageHandlers, ShamirFormHandlers
+from forms import passwordsForm, loginForm, shamirPage, errorPage, shamirForm, passwordsPage, changePwForm
+from handlers import PasswordsFormHandlers, LoginFormHandlers, ShamirPageHandlers, ShamirFormHandlers, ChangePwFormHandlers
 
 # first step, get oauth token
 oauth.getAuth()
@@ -46,6 +46,17 @@ while True:
                 elif command == 'shamir':
                     window.close()
                     window = shamirPage()
+                elif command == 'changePassword': 
+                    window.close
+                    window = changePwForm()
+
+            # CHANGE PASSWORD FORM ACTIONS
+            elif window.Title == titles.CHANGE_PW_FORM():
+                if command == 'changePassword':
+                    ChangePwFormHandlers.change(event, values)
+                    window.close()
+                    window = passwordsForm() #must press save again after you change the password
+                    
             # SHAMIR PAGE ACTIONS
             elif window.Title == titles.SHAMIR_PAGE():
                 if command == 'passwords':

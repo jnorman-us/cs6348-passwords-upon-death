@@ -39,7 +39,8 @@ def passwordsForm():
 		[
 			sg.Button('Add', key=('add', None)), 
 			sg.Button('Save', key=('save', None)), 
-			sg.Button('Shamir', key=('shamir', None))
+			sg.Button('Shamir', key=('shamir', None)),
+			sg.Button('Change Password', key=('changePassword', None)) #added here
 		],
 	]
 
@@ -74,6 +75,17 @@ def passwordsPage():
 		],
 	]
 	return sg.Window(titles.PASSWORD_PAGE(), layout, finalize=True)
+
+def changePwForm():
+	layout = [
+		[sg.Text('Change Password')],
+		[sg.Text('New Password'), sg.InputText(key='password')],
+		[
+			sg.Button('Submit', key=('changePassword', None))	
+		],
+	]
+	return sg.Window(titles.CHANGE_PW_FORM(), layout, finalize=True)
+
 
 def loginForm():
 	layout = [
