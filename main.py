@@ -93,6 +93,7 @@ while True:
 
 oauth.remove_file_encf()
 oauth.remove_file_decf()
+oauth.remove_token()
 env.unset('PWD')
 env.unset('SALT')
 env.unset('SHARES')

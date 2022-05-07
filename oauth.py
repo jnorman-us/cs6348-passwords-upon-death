@@ -16,7 +16,8 @@ from email.mime.text import MIMEText
 import env
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ['https://mail.google.com', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.readonly']
+SCOPES = ['https://www.googleapis.com/auth/gmail.compose', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.readonly']
+#'https://mail.google.com',
 
 
 ''' 
@@ -97,8 +98,9 @@ def share_gfile():
         service_drive = build('drive', 'v3', credentials=creds)
         rx = json.loads(env.get("RECEIVERS"))
         for rcp in rx:
-            grant = {'role': 'writer', 'type': 'user', 'emailAddress': rcp}
-            perms = service_drive.permissions().create(fileId=env.get("GFILE"), body=grant).execute()
+            if rcp != '':
+                grant = {'role': 'writer', 'type': 'user', 'emailAddress': rcp}
+                perms = service_drive.permissions().create(fileId=env.get("GFILE"), body=grant).execute()
 
     except HttpError as error:
         print(error)
@@ -131,6 +133,20 @@ def remove_file_decf():
     try:
         os.remove(env.get('DECF'))
         env.unset('DECF')
+    except:
+        pass
+    finally:
+        pass
+
+
+'''
+    remove token.json after session is complete
+'''
+
+
+def remove_token():
+    try:
+        os.remove('keys/token.json')
     except:
         pass
     finally:
@@ -214,7 +230,9 @@ def destroy_gfile():
 
 def build_message(receiver, shamir_key):
     message_text = "A new Shamir secret key has been shared with you by " + env.get("SENDER") + ". \
-     Please keep it in a safe place! \n\nKey:  " + shamir_key
+     Please keep it in a safe place! \n\nKey:  " + shamir_key + "\n\nFileID:  " + env.get("GFILE") + " \
+     \n\nYou will need to combine a total of " + env.get("K") + " Shamir secret keys in order to decrypt the file"
+
     subject = "New Shamir Key Share"
     message = MIMEText(message_text)
     message['to'] = receiver
@@ -238,7 +256,8 @@ def send_shamir():
         r = json.loads(env.get("RECEIVERS"))
         s = json.loads(env.get("SHARES"))
         for x in range(len(r)):
-            service_mail.users().messages().send(userId="me", body=build_message(r[x], s[x])).execute()
+            if r[x] != '':
+                service_mail.users().messages().send(userId="me", body=build_message(r[x], s[x])).execute()
 
     except HttpError as error:
         print(error)
