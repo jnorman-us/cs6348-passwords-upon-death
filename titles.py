@@ -15,3 +15,6 @@ def SHAMIR_FORM():
 
 def ERROR_PAGE():
 	return 'PUD - Error!'
+
+def CHANGE_PW_FORM():
+	return 'PUD - Change Password'
