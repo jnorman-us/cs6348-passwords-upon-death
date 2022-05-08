@@ -5,14 +5,14 @@ import oauth
 import traceback
 import titles
 
-from forms import passwordsForm, loginForm, shamirPage, errorPage, shamirForm, passwordsPage, changePwForm
-from handlers import PasswordsFormHandlers, LoginFormHandlers, ShamirPageHandlers, ShamirFormHandlers, ChangePwFormHandlers
+from forms import passwordsForm, loginForm, shamirPage, errorPage, shamirForm, passwordsPage, changePwForm, fileForm
+from handlers import PasswordsFormHandlers, LoginFormHandlers, ShamirPageHandlers, ShamirFormHandlers, ChangePwFormHandlers, FileFormHandlers
 
 # first step, get oauth token
 oauth.getAuth()
 
 # first window to open
-window = loginForm()
+window = fileForm()
 while True:
     event, values = window.read()
     if event in (None, 'Close'):
@@ -20,6 +20,11 @@ while True:
     elif type(event) is tuple:
         command = event[0]
         try:
+            if window.Title == titles.FILE_FORM():
+                if command == 'submit':
+                    FileFormHandlers.submit(event, values)
+                    window.close()
+                    window = loginForm()
             # LOGIN FORM ACTIONS
             if window.Title == titles.LOGIN_FORM():
                 if command == 'login':

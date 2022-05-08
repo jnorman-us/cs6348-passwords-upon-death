@@ -18,3 +18,6 @@ def ERROR_PAGE():
 
 def CHANGE_PW_FORM():
 	return 'PUD - Change Password'
+
+def FILE_FORM():
+	return 'PUD - Set File ID'

@@ -74,6 +74,7 @@ class LoginFormHandlers:
 				print(e)
 				raise Exception('Failed to decrypt!')
 		else:
+			print('Google File does not exist, creating...')
 			success = oauth.create_folder()
 			success = success and oauth.create_file()
 			if success:
@@ -82,6 +83,16 @@ class LoginFormHandlers:
 				aes.writePasswords([])
 			else:
 				raise Exception('Failed to create Google Files')
+
+class FileFormHandlers:
+	@staticmethod
+	def submit(event, values):
+		id = values['id']
+
+		if id != '':
+			env.set('GFILE', id)
+		else:
+			env.unset('GFILE')
 
 class ShamirFormHandlers:
 	@staticmethod
