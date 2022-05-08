@@ -98,6 +98,19 @@ def loginForm():
 	]
 	return sg.Window(titles.LOGIN_FORM(), layout, finalize=True)
 
+def fileForm():
+	try:
+		id = env.get('GFILE')
+	except:
+		id = ''
+
+	layout = [
+		[sg.Text('Set File ID')],
+		[sg.Text('ID'), sg.InputText(key='id', default_text=id)],
+		[sg.Button('Submit', key=('submit', None))],
+	]
+	return sg.Window(titles.FILE_FORM(), layout, finalize=True)
+
 def shamirForm():
 	try:
 		shares = json.loads(env.get('INPUT_SHARES'))
