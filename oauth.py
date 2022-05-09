@@ -74,12 +74,19 @@ def create_file():
 '''
 
 
-def get_gfile_permissions():
+def revoke_perms():
     try:
         creds = Credentials.from_authorized_user_file('keys/token.json', SCOPES)
         service_drive = build('drive', 'v3', credentials=creds)
         perms = service_drive.permissions().list(fileId=env.get("GFILE")).execute()
-
+        perms = perms['permissions']
+        for perm in perms:
+            if perm['role'] != 'owner':
+                id = perm['id']
+                service_drive.permissions().delete(
+                    fileId=env.get('GFILE'), 
+                    permissionId=id,
+                ).execute()
     except HttpError as error:
         print(error)
     return perms
