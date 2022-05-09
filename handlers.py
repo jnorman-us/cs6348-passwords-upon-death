@@ -70,18 +70,19 @@ class LoginFormHandlers:
 
 		if oauth.download_file():
 			try:
-				aes.decryptFile()
-			except Exception as e:
-				print(e)
-				raise Exception('Failed to decrypt!')
-			try:
 				if not aes.hmacVerify():
 					print("File has been modified!")
+					return
 				else:
 					print('File has not been modified')
 			except:
 				print('HMAC not present, will generate at next save...')
 				pass
+			try:
+				aes.decryptFile()
+			except Exception as e:
+				print(e)
+				raise Exception('Failed to decrypt!')
 		else:
 			print('Google File does not exist, creating...')
 			success = oauth.create_folder()
