@@ -52,6 +52,7 @@ class PasswordsFormHandlers:
 			})
 		aes.writePasswords(passwords)
 		aes.encryptFile()
+		aes.hmacGen()
 		oauth.upload_file()	
 
 class ChangePwFormHandlers:
@@ -73,6 +74,14 @@ class LoginFormHandlers:
 			except Exception as e:
 				print(e)
 				raise Exception('Failed to decrypt!')
+			try:
+				if not aes.hmacVerify():
+					print("File has been modified!")
+				else:
+					print('File has not been modified')
+			except:
+				print('HMAC not present, will generate at next save...')
+				pass
 		else:
 			print('Google File does not exist, creating...')
 			success = oauth.create_folder()
